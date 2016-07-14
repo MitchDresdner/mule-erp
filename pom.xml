@@ -321,7 +321,14 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- for testing -->
+	<!-- database -->
+	<dependency>
+    	    <groupId>mysql</groupId>
+    	    <artifactId>mysql-connector-java</artifactId>
+    	    <version>6.0.3</version>
+	</dependency>
+
+        <!-- for testing-->
         <dependency>
             <groupId>org.mule.tests</groupId>
             <artifactId>mule-tests-functional</artifactId>
