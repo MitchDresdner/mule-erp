@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:scripting="http://www.mulesoft.org/schema/mule/scripting" xmlns:vm="http://www.mulesoft.org/schema/mule/vm" xmlns:mulexml="http://www.mulesoft.org/schema/mule/xml"
+	xmlns:dw="http://www.mulesoft.org/schema/mule/ee/dw" xmlns:cxf="http://www.mulesoft.org/schema/mule/cxf"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:ws="http://www.mulesoft.org/schema/mule/ws"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation"
+	xmlns:spring="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-current.xsd
+http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ws http://www.mulesoft.org/schema/mule/ws/current/mule-ws.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/cxf http://www.mulesoft.org/schema/mule/cxf/current/mule-cxf.xsd
+http://www.mulesoft.org/schema/mule/ee/dw http://www.mulesoft.org/schema/mule/ee/dw/current/dw.xsd
+http://www.mulesoft.org/schema/mule/xml http://www.mulesoft.org/schema/mule/xml/current/mule-xml.xsd
+http://www.mulesoft.org/schema/mule/vm http://www.mulesoft.org/schema/mule/vm/current/mule-vm.xsd
+http://www.mulesoft.org/schema/mule/scripting http://www.mulesoft.org/schema/mule/scripting/current/mule-scripting.xsd">
+	<spring:beans>
+		<spring:import resource="classpath:applicationContext.xml" />
+		<spring:bean id="fooHdr" class="com.mjd.erp.order.Header">
+			<spring:property name="requestGuid" value="xyzzx" />
+		</spring:bean>
+        <spring:bean id="reqOrder" class="com.mjd.erp.order.OrderServiceImpl"/>
+	</spring:beans>
+	
+	<!-- <spring:bean class="org.apache.cxf.bus.spring.Jsr250BeanPostProcessor" 
+		/> -->
+	
+	<http:listener-config name="HTTP_Listener_Configuration"
+		host="0.0.0.0" port="8080" basePath="/Business/Services/Order/Order.serviceagent"
+		doc:name="HTTP Listener Configuration" />
+	<spring:beans>
+		<spring:bean id="H2Bean" name="H2Bean"
+			class="org.enhydra.jdbc.standard.StandardDataSource">
+			<spring:property name="user" value="sa" />
+			<spring:property name="driverName" value="org.h2.Driver" />
+			<spring:property name="url"
+				value="jdbc:h2:tcp://localhost/~/test" />
+		</spring:bean>
+	</spring:beans>
+	<db:generic-config name="H2" dataSource-ref="H2Bean"
+		doc:name="Generic Database Configuration" />
+		
+	<flow name="mule-erpFlow">
+	
+		<http:listener config-ref="HTTP_Listener_Configuration"
+			path="/OrderServiceEndpoint1" doc:name="HTTP" allowedMethods="POST" />
+
+		<cxf:jaxws-service serviceClass="com.mjd.erp.order.OrderService" doc:name="CXF" />
+
+		<component doc:name="Get Request">
+			<spring-object bean="reqOrder" />
+		</component>
+        <set-variable variableName="orderMsg" value="#[message.payload]" doc:name="Response Msg"/>
+        
+        <db:select config-ref="H2" doc:name="Get OrderItems">
+        	<db:parameterized-query><![CDATA[select * from OrderItems where OrderId = #[message.payload.header.requestGuid]]]></db:parameterized-query>
+        </db:select>
+		<set-variable variableName="orders" value="#[message.payload]" doc:name="OrderItems Resultset"/>
+		
+        <foreach doc:name="For Each">
+        	<processor-chain doc:name="Processor Chain">
+	            <db:select config-ref="H2" doc:name="Database">
+                    <db:parameterized-query><![CDATA[select * from ITEMS where ORDERITEMID = #[message.payload.ORDERITEMID]]]></db:parameterized-query>
+	            </db:select>
+                <scripting:component doc:name="Script">
+                    <scripting:script engine="Groovy" file="groovy/getOrders.groovy"/>
+                </scripting:component>
+            </processor-chain>
+        </foreach>
+        
+        <set-payload value="#[flowVars.orderMsg]" doc:name="Set Payload"/>
+
+	</flow>
+	
+</mule>
