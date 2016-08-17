@@ -43,15 +43,29 @@
         http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd">
 
     <!--
-    TODO: You can define a test configuration here then from the HelloMuleTestCase you can fire events into
+    TODO: You can define a test configuration her
+    e then from the HelloMuleTestCase you can fire events into
     Mule (using the MuleClient) and then assert the results.
     -->
+    <spring:beans>
+	<spring:bean id="H2Bean" name="H2Bean"
+	  class="org.enhydra.jdbc.standard.StandardDataSource">
+	  <spring:property name="user" value="sa" />
+	  <spring:property name="driverName" value="org.h2.Driver" />
+	  <spring:property name="url" value="jdbc:h2:tcp://localhost/~/test" />
+	</spring:bean>
+    </spring:beans>
+    
+    <db:generic-config name="H2" dataSource-ref="H2Bean" doc:name="Generic Database Configuration" />
+    
     <flow name="main">
         <vm:inbound-endpoint path="in" exchange-pattern="request-response"/>
 
         <!-- TODO add your service component here. This can also be a Spring bean using <spring-object bean="name"/> -->
         <test:component appendString=" Received"/>
 
+	<logger doc:name="Testing mule-erp"/>
+	
         <vm:outbound-endpoint path="out"/>
     </flow>
 </mule>
