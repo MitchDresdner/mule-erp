@@ -2,7 +2,7 @@ package com.widgets.muledemo;
 
 import java.util.HashMap;
 
-import junit.framework.Test;
+import org.junit.Test;
 
 import org.mule.api.MuleException;
 import org.mule.api.MuleMessage;
@@ -19,7 +19,7 @@ public class AppTest extends FunctionalTestCase
     @Override
     protected String getConfigFile() {
 	//return "src/main/app/sample-maven.xml";
-	return "mule-erp-functional-test-config.xml";
+	return "simple-loopback.xml";
     }
 
     @Test
@@ -32,7 +32,7 @@ public class AppTest extends FunctionalTestCase
 	
 	MuleMessage msg = muleContext.getClient().send(url, "", headers);
 	
-	assertEquals("Http status should be 200", "200", msg.getInboundProperty("http.status"));
+	assertEquals("Http status should be 200", 200, msg.getInboundProperty("http.status"));
     }
 	
 
