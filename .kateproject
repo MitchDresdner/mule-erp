@@ -1,0 +1,4 @@
+{
+	"name": "mule-erp",
+	"files": [ {"git": 1, "recursive": 1 }]
+}
